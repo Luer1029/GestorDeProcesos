@@ -1,0 +1,561 @@
+SIMULADOR DE GESTOR DE PROCESOS PARA SISTEMAS OPERATIVOS
+Documento técnico universitario
+
+============================================================
+PARTE 1. ESTRUCTURA DEL REPOSITORIO GITHUB
+============================================================
+
+1. Nombre del proyecto
+Simulador de Gestor de Procesos para Sistemas Operativos
+
+2. Descripción breve
+Proyecto desarrollado en Java con Maven y una interfaz de consola interactiva (CLI) que simula el comportamiento básico de un sistema operativo en la administración de procesos, recursos, planificación de CPU, sincronización, comunicación entre procesos, logs y estadísticas.
+
+3. Tecnologías utilizadas
+- Lenguaje: Java 17
+- Gestor de dependencias y construcción: Maven
+- Interfaz: Consola interactiva (CLI)
+- API de concurrencia: semáforos y sincronización con Java
+- Estructura de proyecto: Maven estándar
+
+4. Estructura de carpetas Maven
+
+Repositorio profesional:
+
+/src
+  /main
+    /java
+      /com/gestorprocesos
+        /main
+        /models
+        /managers
+        /schedulers
+        /synchronization
+        /utils
+  /test
+
+5. Explicación de carpetas y paquetes
+
+- /src/main/java/com/gestorprocesos/main
+  Contiene el punto de entrada de la aplicación. Aquí se ubica App, que carga el menú principal y coordina el flujo del simulador.
+
+- /src/main/java/com/gestorprocesos/models
+  Contiene las entidades y enums del dominio. Aquí están Proceso, MensajeProceso, EstadoProceso, MotivoTerminacion y SchedulerType.
+
+- /src/main/java/com/gestorprocesos/managers
+  Contiene la lógica de negocio principal para administración de procesos y recursos. Aquí están ProcessManager y ResourceManager.
+
+- /src/main/java/com/gestorprocesos/schedulers
+  Contiene la estrategia de planificación. Aquí están Scheduler, AbstractScheduler, FcfsScheduler, SjfScheduler, RoundRobinScheduler, PriorityScheduler y SchedulerFactory.
+
+- /src/main/java/com/gestorprocesos/synchronization
+  Contiene la simulación de sincronización y comunicación entre procesos. Aquí están MessageQueue y ProducerConsumerSimulation.
+
+- /src/main/java/com/gestorprocesos/utils
+  Contiene clases de apoyo: Logger, ConsoleInput, RandomDataGenerator, StatisticsManager y TimeSimulator.
+
+- /src/test
+  Carpeta reservada para pruebas automatizadas. En la versión actual del proyecto no se incluyeron tests, pero la estructura Maven queda preparada para agregarlos.
+
+6. Clases principales
+
+- App
+  Clase principal del sistema. Muestra el menú CLI, recibe entradas del usuario y coordina los módulos.
+
+- Proceso
+  Representa la PCB (Process Control Block) del proceso simulado.
+
+- ProcessManager
+  Gestiona la creación, suspensión, reanudación, terminación, mensajería e historial de procesos.
+
+- ResourceManager
+  Administra CPU, memoria y recursos compartidos.
+
+- Scheduler
+  Interfaz base de planificación.
+
+- FcfsScheduler, SjfScheduler, RoundRobinScheduler, PriorityScheduler
+  Implementan los algoritmos de planificación.
+
+- ProducerConsumerSimulation
+  Simula el problema productor-consumidor con semáforos.
+
+- Logger
+  Registra eventos del sistema en consola y en memoria.
+
+- StatisticsManager
+  Calcula estadísticas de ejecución y memoria.
+
+- RandomDataGenerator
+  Genera procesos de prueba de forma aleatoria.
+
+7. Explicación del archivo pom.xml
+El archivo pom.xml define la construcción del proyecto con Maven.
+
+Contenido relevante:
+- groupId: com.gestorprocesos
+- artifactId: simulador-gestor-procesos
+- version: 1.0.0
+- Java source/target: 17
+- Plugin de compilación: maven-compiler-plugin
+- Plugin de ejecución: exec-maven-plugin
+
+Función del pom.xml:
+- compilar el proyecto
+- generar el JAR
+- ejecutar la clase principal desde Maven
+- asegurar compatibilidad con Java 17
+
+8. Dependencias Maven
+En este proyecto no se declararon dependencias externas adicionales. Se usa Java estándar y plugins de Maven para compilar y ejecutar.
+
+9. Instrucciones de compilación
+Desde la raíz del proyecto:
+
+```bash
+mvn clean package
+```
+
+Este comando:
+- limpia artefactos previos
+- compila el código fuente
+- empaqueta el proyecto en un JAR
+
+10. Instrucciones de ejecución
+
+Opción 1, con Maven:
+```bash
+mvn exec:java
+```
+
+Opción 2, ejecutando el compilado:
+```bash
+java -cp target/classes com.gestorprocesos.main.App
+```
+
+11. Comandos básicos de Maven
+
+- Compilar y empacar:
+```bash
+mvn clean package
+```
+
+- Ejecutar la aplicación:
+```bash
+mvn exec:java
+```
+
+- Limpiar artefactos compilados:
+```bash
+mvn clean
+```
+
+- Ver información del proyecto:
+```bash
+mvn help:effective-pom
+```
+
+12. Estructura recomendada del README.md
+Un README profesional del proyecto debería incluir:
+- nombre del proyecto
+- descripción general
+- características
+- arquitectura
+- algoritmos de planificación
+- requisitos técnicos
+- instrucciones de compilación y ejecución
+- menú principal
+- ejemplos de uso
+- notas finales
+
+============================================================
+PARTE 2. DOCUMENTO TÉCNICO DEL SISTEMA
+============================================================
+
+1. Portada
+
+Simulador de Gestor de Procesos para Sistemas Operativos
+Documento técnico universitario
+
+Asignatura: Sistemas Operativos
+Lenguaje de implementación: Java
+Gestor de construcción: Maven
+Interfaz: Consola interactiva (CLI)
+Autor: [Completar por el estudiante]
+Fecha: [Completar por el estudiante]
+Institución: [Completar por el estudiante]
+
+2. Índice
+
+1. Portada
+2. Índice
+3. Introducción
+4. Objetivo general
+5. Objetivos específicos
+6. Planteamiento del problema
+7. Justificación
+8. Descripción general del sistema
+9. Arquitectura del sistema
+10. Explicación de módulos
+11. Gestión de procesos
+12. Estados de procesos
+13. Planificación de CPU
+14. Explicación de algoritmos
+15. Administración de recursos
+16. Comunicación entre procesos
+17. Sincronización
+18. Problema productor-consumidor
+19. Manejo de memoria
+20. Logs del sistema
+21. Estadísticas del sistema
+22. Flujo de ejecución
+23. Casos de uso
+24. Ejemplos de ejecución
+25. Resultados esperados
+26. Conclusiones
+27. Referencias
+
+3. Introducción
+ El presente documento describe el diseño, funcionamiento e intención educativa del proyecto Simulador de Gestor de Procesos para Sistemas Operativos. El sistema fue desarrollado en Java con Maven y una interfaz de consola para modelar conceptos fundamentales de administración de procesos, planificación de CPU, memoria, recursos compartidos, sincronización y comunicación entre procesos.
+
+El objetivo del simulador no es emular un kernel real, sino representar de manera didáctica las operaciones básicas de un sistema operativo para que el estudiante observe de forma manual el comportamiento interno de una planificación y administración de procesos.
+
+4. Objetivo general
+Desarrollar un simulador de gestor de procesos en Java que permita representar, mediante consola, la creación, planificación, ejecución, suspensión, reanudación, terminación y administración de procesos, recursos y sincronización en un sistema operativo simulado.
+
+5. Objetivos específicos
+- Implementar una PCB que represente cada proceso.
+- Simular estados de procesos y sus transiciones.
+- Administrar memoria, CPU y recursos compartidos.
+- Integrar algoritmos de planificación FCFS, SJF, Round Robin y Prioridades.
+- Simular comunicación entre procesos mediante mensajes.
+- Simular sincronización con productor-consumidor usando semáforos.
+- Registrar eventos en logs.
+- Calcular estadísticas de ejecución.
+- Proveer una interfaz CLI para ejecutar pruebas manuales.
+
+6. Planteamiento del problema
+En un sistema operativo, la administración de procesos y recursos determina el rendimiento, la equidad de CPU y la estabilidad general del sistema. Cuando varios procesos compiten por memoria, CPU y recursos compartidos, el sistema debe decidir quién ejecuta, quién espera y qué ocurre cuando faltan recursos.
+
+El problema que aborda este proyecto consiste en diseñar una herramienta educativa que represente dichas decisiones de forma clara, controlada y observable desde consola, permitiendo al usuario estudiar el comportamiento de distintos algoritmos de planificación y mecanismos de sincronización.
+
+7. Justificación
+El proyecto es útil como herramienta de aprendizaje porque permite observar en tiempo real los principales conceptos de sistemas operativos. A diferencia de una explicación teórica aislada, este simulador hace visibles los cambios de estado, la asignación de memoria, la ocupación de CPU, la liberación de recursos y el impacto del algoritmo de planificación seleccionado.
+
+Además, el uso de Java y Maven facilita el mantenimiento, la portabilidad y la organización modular del código.
+
+8. Descripción general del sistema
+El sistema está compuesto por una clase principal que presenta un menú de consola y por varios módulos especializados:
+- creación y administración de procesos
+- asignación y liberación de recursos
+- planificación por algoritmo
+- mensajería entre procesos
+- simulación de productor-consumidor
+- registro de eventos
+- estadísticas
+
+La aplicación crea procesos manualmente o mediante datos de prueba aleatorios y los envía a una cola de planificación. Dependiendo del algoritmo seleccionado, el scheduler decide el orden de ejecución. Los procesos que terminan liberan sus recursos y pasan al historial.
+
+9. Arquitectura del sistema
+La arquitectura es modular y orientada a objetos. Cada paquete cumple una responsabilidad definida.
+
+Capas principales:
+
+- Capa de presentación
+  App y ConsoleInput. Manejan la interacción con el usuario.
+
+- Capa de dominio
+  Proceso, MensajeProceso y enums. Representan las entidades del sistema.
+
+- Capa de negocio
+  ProcessManager y ResourceManager. Encargados de la lógica principal.
+
+- Capa de planificación
+  Scheduler y sus implementaciones. Deciden el orden de ejecución.
+
+- Capa de soporte
+  Logger, StatisticsManager, TimeSimulator y RandomDataGenerator.
+
+- Capa de sincronización
+  ProducerConsumerSimulation y MessageQueue.
+
+10. Explicación de módulos
+
+10.1 main
+Contiene App, que coordina el menú principal y conecta todos los módulos.
+
+10.2 models
+Contiene las estructuras de datos centrales del simulador.
+
+10.3 managers
+Contiene el manejo del estado global de procesos y recursos.
+
+10.4 schedulers
+Contiene la lógica de algoritmos de planificación.
+
+10.5 synchronization
+Contiene la simulación de comunicación y sincronización.
+
+10.6 utils
+Contiene utilidades comunes de la aplicación.
+
+11. Gestión de procesos
+Cada proceso se representa mediante la clase Proceso, que funciona como una PCB simulada. Esta entidad almacena:
+- PID único
+- nombre del proceso
+- estado
+- prioridad
+- tiempo de ejecución original
+- tiempo restante
+- memoria solicitada y asignada
+- recursos solicitados y asignados
+- motivo de terminación
+- mensajes recibidos
+
+La clase ProcessManager crea procesos, los mantiene en una estructura de procesos activos y conserva un historial de terminados.
+
+12. Estados de procesos
+Los estados definidos en el sistema son:
+
+| Estado | Significado |
+|---|---|
+| LISTO | El proceso puede entrar a CPU |
+| EJECUTANDO | El proceso está usando CPU |
+| ESPERANDO | El proceso espera memoria o recursos |
+| SUSPENDIDO | El proceso fue detenido manualmente |
+| TERMINADO | El proceso finalizó y liberó recursos |
+
+Transiciones principales:
+- LISTO a EJECUTANDO cuando el scheduler lo selecciona.
+- EJECUTANDO a TERMINADO si finaliza su tiempo.
+- LISTO a SUSPENDIDO por acción manual.
+- SUSPENDIDO a LISTO al reanudar.
+- ESPERANDO a LISTO cuando los recursos vuelven a estar disponibles.
+
+13. Planificación de CPU
+La planificación decide qué proceso entra a CPU. En el sistema esto se implementa con una interfaz común Scheduler y una clase base AbstractScheduler.
+
+La cola de planificación contiene sólo procesos en estado LISTO. El scheduler selecciona el siguiente proceso, solicita CPU, lo ejecuta durante una cantidad de tiempo simulada, reduce su tiempo restante y luego libera la CPU.
+
+14. Explicación de algoritmos
+
+14.1 FCFS
+First-Come, First-Served.
+- Ejecuta los procesos en orden de llegada.
+- No expulsa al proceso una vez que entra a CPU.
+- Es simple y predecible.
+- Puede causar largas esperas si el primer proceso es muy grande.
+
+14.2 SJF
+Shortest Job First.
+- Selecciona el proceso con menor tiempo restante.
+- Reduce el tiempo promedio de espera.
+- Favorece trabajos cortos.
+- Puede causar inanición de procesos largos.
+
+14.3 Round Robin
+- Cada proceso recibe un quantum fijo.
+- Si no termina, regresa al final de la cola.
+- Mejora la equidad.
+- Es ideal para simular multitarea con turnos.
+- El quantum se configura antes de ejecutar el algoritmo.
+
+14.4 Prioridades
+- Selecciona primero el proceso con prioridad más alta.
+- En este proyecto, un número menor representa una prioridad mayor.
+- Puede causar inanición en procesos de baja prioridad.
+- Es útil para simular cargas críticas o de sistema.
+
+15. Administración de recursos
+La clase ResourceManager controla:
+- CPU disponible
+- memoria total
+- memoria usada
+- recursos ocupados
+
+Cuando un proceso se crea, el sistema verifica si existe memoria suficiente y si los recursos solicitados están libres. Si la validación es positiva, los recursos se asignan. En caso contrario, el proceso queda esperando.
+
+Recursos manejados por la simulación:
+- CPU
+- memoria
+- recursos lógicos como DISCO, RED, GPU, IMPRESORA u otros definidos en el simulador
+
+16. Comunicación entre procesos
+La comunicación entre procesos se simula mediante la clase MensajeProceso y una cola interna MessageQueue.
+
+Flujo:
+- el proceso origen envía un mensaje
+- el mensaje se encola
+- el sistema procesa la cola
+- el proceso destino recibe el mensaje y lo guarda en su lista de mensajes recibidos
+
+Esto permite observar comunicación lógica entre procesos sin implementar un IPC real del sistema operativo.
+
+17. Sincronización
+La sincronización se aborda de dos maneras:
+- coordinación de acceso a recursos mediante el ResourceManager
+- simulación de exclusión mutua y control de buffer en productor-consumidor usando semáforos de Java
+
+La exclusión mutua evita condiciones de carrera en la simulación concurrente.
+
+18. Problema productor-consumidor
+El módulo ProducerConsumerSimulation representa un buffer acotado con:
+- un semáforo para espacios disponibles
+- un semáforo para elementos disponibles
+- un semáforo mutex para exclusión mutua
+
+Funcionamiento:
+- el productor produce elementos y los coloca en el buffer
+- si el buffer está lleno, el productor espera
+- el consumidor retira elementos
+- si el buffer está vacío, el consumidor espera
+
+Este módulo demuestra de forma práctica bloqueo, espera y liberación de recursos.
+
+19. Manejo de memoria
+La memoria se asigna por proceso al momento de la creación si existe capacidad disponible.
+
+Criterios de validación:
+- si memoriaUsada + memoriaSolicitada supera memoriaTotal, se rechaza la asignación
+- si la asignación es válida, la memoria se marca como ocupada
+- al terminar el proceso, la memoria se libera
+
+Esto permite observar el efecto de la presión de memoria y de los procesos en espera.
+
+20. Logs del sistema
+La clase Logger registra los eventos del simulador en orden cronológico.
+
+Eventos registrados:
+- creación de procesos
+- cambios de estado
+- asignación y liberación de recursos
+- ejecución de procesos
+- terminaciones
+- mensajes entre procesos
+- eventos de sincronización
+
+Los logs ayudan a verificar lo que ocurre internamente en cada acción del usuario.
+
+21. Estadísticas del sistema
+StatisticsManager calcula:
+- cantidad de procesos ejecutados
+- tiempo promedio de ejecución
+- memoria usada actual
+- CPU usada actual
+
+Estas estadísticas permiten evaluar el comportamiento general del simulador después de varias ejecuciones.
+
+22. Flujo de ejecución
+Flujo general del sistema:
+1. El usuario inicia la aplicación.
+2. Se genera un conjunto de procesos de prueba o se crean manualmente.
+3. El ResourceManager evalúa memoria y recursos.
+4. El usuario selecciona un algoritmo de planificación.
+5. El scheduler ejecuta los procesos listos.
+6. Los procesos pueden suspenderse, reanudarse o terminarse.
+7. Se liberan recursos al finalizar.
+8. El sistema registra logs y estadísticas.
+
+23. Casos de uso
+
+Caso de uso 1: crear proceso
+- Entrada: nombre, prioridad, tiempo de ejecución, memoria y recursos.
+- Resultado: proceso creado en estado LISTO o ESPERANDO.
+
+Caso de uso 2: ejecutar scheduler
+- Entrada: selección del algoritmo.
+- Resultado: los procesos se ejecutan según la política elegida.
+
+Caso de uso 3: terminar proceso
+- Entrada: PID y motivo.
+- Resultado: el proceso libera sus recursos y pasa al historial.
+
+Caso de uso 4: enviar mensaje
+- Entrada: PID origen, PID destino y contenido.
+- Resultado: el mensaje se entrega al proceso destino.
+
+Caso de uso 5: simular productor-consumidor
+- Entrada: comando del menú.
+- Resultado: se observan esperas, producción y consumo de elementos.
+
+24. Ejemplos de ejecución
+
+Ejemplo A: creación de procesos
+- Opción 1 del menú.
+- El sistema genera procesos aleatorios.
+- Algunos pueden quedar en ESPERANDO si falta memoria o hay conflicto de recursos.
+
+Ejemplo B: FCFS
+- Opción 10, seleccionar FCFS.
+- Opción 13 para ver la cola.
+- Opción 4 para ejecutar.
+- Se observa el orden de llegada.
+
+Ejemplo C: Round Robin
+- Opción 10, seleccionar Round Robin e ingresar quantum.
+- Opción 4.
+- Cada proceso recibe un turno limitado y vuelve a la cola si no termina.
+
+Ejemplo D: comunicación
+- Opción 11.
+- Se elige un PID origen y un PID destino.
+- El mensaje queda asociado al proceso destino.
+
+Ejemplo E: productor-consumidor
+- Opción 12.
+- Se observan logs de producción, consumo, espera y liberación de recursos.
+
+25. Resultados esperados
+Al ejecutar correctamente el simulador, se espera observar:
+- creación de procesos con PID único
+- cambios de estado coherentes
+- planificación según el algoritmo elegido
+- asignación y liberación de recursos
+- procesos en espera cuando faltan recursos
+- mensajes entregados entre procesos
+- sincronización visible en productor-consumidor
+- logs ordenados
+- estadísticas acumuladas
+
+26. Conclusiones
+El Simulador de Gestor de Procesos para Sistemas Operativos constituye una herramienta académica útil para comprender conceptos centrales de sistemas operativos. Su diseño modular permite observar la interacción entre procesos, recursos y algoritmos de planificación de una manera clara y controlada.
+
+La implementación en Java con Maven facilita la portabilidad, el mantenimiento y la evolución del proyecto. A nivel pedagógico, el simulador cumple su propósito al mostrar cómo se comporta un sistema operativo cuando administra CPU, memoria, prioridades, exclusión mutua y comunicación entre procesos.
+
+27. Referencias
+- Silberschatz, Galvin y Gagne. Operating System Concepts.
+- Tanenbaum y Bos. Modern Operating Systems.
+- Documentación oficial de Java.
+- Documentación oficial de Maven.
+- Apuntes de clase sobre procesos, planificación y sincronización.
+
+============================================================
+ANEXO. RESUMEN DE CLASES REALES DEL PROYECTO
+============================================================
+
+Clases y archivos existentes en el proyecto actual:
+- App
+- Proceso
+- MensajeProceso
+- EstadoProceso
+- MotivoTerminacion
+- SchedulerType
+- ProcessManager
+- ResourceManager
+- Scheduler
+- AbstractScheduler
+- FcfsScheduler
+- SjfScheduler
+- RoundRobinScheduler
+- PriorityScheduler
+- SchedulerFactory
+- MessageQueue
+- ProducerConsumerSimulation
+- Logger
+- ConsoleInput
+- RandomDataGenerator
+- StatisticsManager
+- TimeSimulator
+
+Nota final:
+Este documento fue redactado para reflejar únicamente lo que está implementado en el programa actual. Si una clase o módulo no existe en el repositorio, fue omitido intencionalmente para mantener la documentación fiel al sistema real.

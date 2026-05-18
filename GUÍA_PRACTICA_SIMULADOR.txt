@@ -1,0 +1,264 @@
+GUÍA PRÁCTICA: PROBAR EL SIMULADOR DE GESTOR DE PROCESOS
+
+Objetivo:
+Probar manualmente TODO el sistema desde el menú del programa, paso a paso, aprendiendo:
+- procesos y estados
+- planificación (FCFS, SJF, Round Robin, Prioridades)
+- asignación de recursos y memoria
+- sincronización (productor-consumidor)
+- comunicación entre procesos (mensajes)
+- terminación y liberación de recursos
+
+Instrucciones generales:
+- Ejecuta el programa con `mvn exec:java` o `java -cp target/classes com.gestorprocesos.main.App`.
+- El menú principal lista opciones numeradas del 1 al 15. Usa las opciones tal como se indican.
+- Después de cada acción observa la salida por consola y revisa los `logs` (opción 9) y `Mostrar recursos` (opción 8) para ver los efectos internos.
+
+MENÚ (números para usar):
+1 Generar datos de prueba
+2 Crear proceso
+3 Mostrar procesos
+4 Ejecutar scheduler
+5 Suspender proceso
+6 Reanudar proceso
+7 Terminar proceso
+8 Mostrar recursos
+9 Mostrar logs
+10 Cambiar algoritmo
+11 Enviar mensaje entre procesos
+12 Simular productor-consumidor
+13 Mostrar cola de planificación
+14 Mostrar estadísticas
+15 Salir
+
+--- PRUEBA 1: Exploración inicial ---
+Objetivo: ver procesos y recursos iniciales
+Pasos:
+1) Ejecuta el programa.
+2) Opción 1 (Generar datos de prueba): genera N procesos aleatorios.
+   - Qué ingresar: sólo el número 1 y Enter.
+   - Qué debe aparecer: mensajes "Creado y listo" o "Creado en espera" por cada proceso.
+   - Interno: `ProcessManager.crearProceso()` crea la PCB (PID, prioridad, tiempo, memoria, recursos), luego pide `ResourceManager.solicitarRecursos()`.
+     - Si hay memoria y recursos libres, el proceso pasa a estado LISTO y `ResourceManager` asigna memoria y marca recursos ocupados.
+     - Si no, queda en ESPERANDO sin memoria asignada.
+3) Opción 3 (Mostrar procesos): verás lista de procesos activos y aquellos en historial vacíos.
+4) Opción 8 (Mostrar recursos): verás CPU usada, memoria usada y recursos ocupados.
+5) Opción 9 (Mostrar logs): revisa eventos de creación y asignación.
+
+Observa:
+- Procesos en LISTO vs ESPERANDO.
+- Recursos ocupados listados por `ResourceManager`.
+- Mensajes de log indicando conflictos de recursos o memoria insuficiente.
+
+--- PRUEBA 2: FCFS (First-Come, First-Served) ---
+Objetivo: entender ejecución por orden de llegada
+Pasos:
+1) Opción 10 (Cambiar algoritmo) -> seleccionar 1 (FCFS).
+   - Qué ingresar: 10, luego 1.
+   - Interno: `SchedulerFactory` crea `FcfsScheduler`.
+2) Opción 13 (Mostrar cola de planificación): verás los procesos LISTOS en orden de llegada.
+3) Opción 4 (Ejecutar scheduler): inicia planificador FCFS.
+   - Qué ingresar: 4.
+   - Qué aparece: logs de "Iniciando planificador FCFS", "Proceso PID X ejecutándose...", y cuando termine el proceso "Proceso PID X finalizado".
+   - Interno: `AbstractScheduler.ejecutar()` toma el siguiente proceso (primero en la lista), solicita CPU con `ResourceManager.solicitarCPU()`.
+     - Si CPU libre, cambia estado a EJECUTANDO, simula tiempo (TimeSimulator), reduce tiempo restante con `reducirTiempoRestante()`.
+     - Si tiempo llega a 0, `ProcessManager.terminarProcesoInterno()` se llama y se liberan recursos (`ResourceManager.liberarRecursos()`), proceso pasa a TERMINADO y se guarda en historial.
+     - Si no terminó, regresa a LISTO y vuelve a la cola.
+Qué observar:
+- Cola: el primer proceso entra a CPU y ejecuta hasta terminar (sin preempción).
+- Procesos siguientes esperan a que CPU se libere.
+Conceptos vistos:
+- Planificación no preemptiva, turnaround y waiting time aumentan para procesos posteriores.
+Diferencias con otros algoritmos:
+- FCFS no corta procesos; favorece procesos largos si llegan primero.
+
+--- PRUEBA 3: SJF (Shortest Job First) ---
+Objetivo: ver selección por menor tiempo restante
+Pasos:
+1) Opción 1 para regenerar (opcional) o usa procesos actuales.
+2) Opción 10 -> seleccionar 2 (SJF).
+   - Interno: `SjfScheduler` implementa comparator por `tiempoRestante`.
+3) Opción 13: ver cola ordenada por tiempo restante (de menor a mayor).
+4) Opción 4: ejecutar scheduler.
+   - Qué ver: procesos con menor tiempo se ejecutan primero.
+Interno:
+- `AbstractScheduler.seleccionarSiguienteProceso()` usa `obtenerComparador()` (SJF lo define) para elegir el proceso mínimo.
+Observa:
+- Los trabajos cortos pasan antes; se reduce el tiempo promedio de espera.
+Conceptos:
+- SJF puede causar inanición de procesos largos si constantemente llegan procesos cortos.
+Comparación:
+- A diferencia de FCFS, SJF reordena la cola por duración.
+
+--- PRUEBA 4: Round Robin (RR) ---
+Objetivo: ver reparto justo con quantum
+Pasos:
+1) Opción 1 para regenerar procesos (opcional).
+2) Opción 10 -> seleccionar 3 (Round Robin). Ingresar quantum cuando se pida, p.ej. 3.
+   - Qué ingresar: 10, 3, luego 3 (quantum).
+   - Interno: `RoundRobinScheduler` almacena `quantum`.
+3) Opción 13: ver cola (orden de llegada inicial).
+4) Opción 4: ejecutar scheduler.
+   - Qué ver: cada proceso recibe hasta `quantum` unidades; si no termina, vuelve a la cola con tiempo restante actualizado.
+Interno:
+- `calcularTiempoEjecucion()` devuelve `min(quantum, tiempoRestante)`.
+- Scheduler solicita CPU, ejecuta `tiempoConsumido = calcularTiempoEjecucion()`; luego libera CPU.
+Observa:
+- Turnos más cortos, respuesta interactiva mejor que FCFS.
+- Si quantum muy pequeño, overhead de cambio de contexto (simulado) aumenta; si muy grande, se asemeja a FCFS.
+Conceptos:
+- Quantum, fairness, context switching (simulado), latencia y throughput.
+
+--- PRUEBA 5: Prioridades ---
+Objetivo: ejecutar por prioridad (número menor = mayor prioridad)
+Pasos:
+1) Opción 1 para regenerar procesos si quieres nuevos.
+2) Opción 10 -> seleccionar 4 (Prioridades).
+3) Opción 13: ver cola ordenada por prioridad.
+4) Opción 4: ejecutar scheduler.
+   - Qué ver: procesos con prioridad más alta (valor numérico menor) se seleccionan primero.
+Interno:
+- `PriorityScheduler` usa `getPrioridad()` para comparar.
+Observa:
+- Procesos bajos (alta prioridad) ejecutan antes; procesos de baja prioridad pueden sufrir inanición.
+Conceptos:
+- Prioridad, posibles políticas de envejecimiento (no implementado aquí), inanición.
+
+--- MANUAL: Operaciones concretas y qué observar ---
+A continuación acciones concretas con ejemplos y qué debes mirar después de ejecutarlas.
+
+A) Crear un proceso manualmente (opción 2)
+Ejemplo:
+- 2
+- Nombre: "VideoRender"
+- Prioridad: 2
+- Tiempo de ejecución: 7
+- Memoria solicitada: 1024
+- Recursos: DISCO-1,GPU
+Qué observar:
+- Log: "Creado y listo" (si recursos disponibles) o "Creado en espera".
+- `Mostrar procesos` (3): el proceso aparece en LISTO o ESPERANDO.
+Interno:
+- `ProcessManager.crearProceso` pide recursos: `ResourceManager.solicitarRecursos()`.
+- Si asigna memoria, `memoriaUsada` aumenta y `recursosOcupados` incluye GPU/DISCO-1.
+
+B) Suspender / Reanudar (opciones 5 & 6)
+- 5 -> ingresa PID (p.ej. 2). Observa log "Proceso PID 2 suspendido." y estado cambia a SUSPENDIDO.
+- 6 -> PID -> observa "Proceso PID 2 reanudado." y estado LISTO. Reanudar no reasigna recursos en esta implementación (recursos permanecen asignados si estaban asignados).
+Interno:
+- `suspenderProceso()` cambia `estado` y deja recursos asignados (simulación). Podrías observar que proceso suspendido no entra en la cola de planificación.
+
+C) Terminar proceso (opción 7)
+- 7 -> PID -> seleccionar motivo (1-4).
+- Qué observar: Log "Proceso PID X finalizado por MOTIVO." Recursos liberados en `ResourceManager.liberarRecursos()`.
+- `Mostrar recursos` mostrará memoria liberada y recursos disponibles.
+- `Mostrar historial` (en el mismo menú 3 se muestra historial también) mostrará proceso en TERMINADO.
+Interno:
+- `terminarProcesoInterno()` marca TERMINADO, libera memoria y recursos, mueve proceso a `historial`.
+
+D) Mostrar cola (opción 13)
+- Útil antes y después de ejecutar el scheduler para ver cómo cambia la cola.
+- En Round Robin verás procesos reaparecer con tiempoRestante modificado.
+
+E) Ejecutar scheduler (opción 4)
+- Observa logs por proceso: EJECUCIÓN -> libera CPU -> TERMINACIÓN o retorno a LISTO.
+- Revisa `Mostrar recursos` para ver `cpuUsada` cambiando entre 1 y 0.
+
+F) Comunicación entre procesos (opción 11)
+- Paso:
+  1) Identifica dos PIDs activos (usa opción 3).
+  2) 11 -> PID origen -> PID destino -> texto del mensaje.
+- Qué observar: Log "Mensaje enviado de PID X a PID Y" y en `Mostrar procesos` el proceso destino tendrá el mensaje en su lista `mensajesRecibidos`.
+Interno:
+- `ProcessManager.enviarMensaje()` encola mensaje en `MessageQueue` y `procesarMensajesPendientes()` lo entrega al destino.
+
+G) Productor-Consumidor (opción 12)
+- 12 -> ejecuta simulación.
+- Qué observar: logs "Productor en espera" o "Consumidor en espera" cuando buffer lleno/vacío; producción y consumo de elementos.
+Interno:
+- Usa `Semaphore` para espacios disponibles, elementos disponibles y `mutex` para exclusión mutua. Muestra bloqueo y liberación de recursos.
+
+H) Logs & Estadísticas (opciones 9 y 14)
+- 9: ver toda la traza en orden cronológico.
+- 14: ver número de procesos ejecutados, tiempo promedio y memoria usada actual.
+
+--- EJEMPLOS DE LAB COMPLETO (paso a paso) ---
+Laboratorio A: Comparar FCFS vs SJF
+1) Ejecuta el programa, Opción 1 para generar 5 procesos.
+2) Opción 10 -> 1 (FCFS).
+3) Opción 13: anota orden de la cola (A,B,C,D,E con sus tiempos).
+4) Opción 4: ejecutar. Observa orden de ejecución y tiempos en logs.
+5) Regenera con Opción 1 (nuevos procesos).
+6) Opción 10 -> 2 (SJF) y Opción 13 para ver orden.
+7) Opción 4: ejecutar. Compara cambio de orden y tiempo promedio (ver 14).
+
+Laboratorio B: Prueba Round Robin
+1) Genera 4 procesos con distintos tiempos (usa Opción 2 para crear: p.ej. P1=8, P2=3, P3=6, P4=4).
+2) Opción 10 -> 3 (Round Robin), ingresa quantum=3.
+3) Opción 13 para ver cola.
+4) Opción 4: ejecutar. Observa en logs cómo cada PID consume hasta 3 unidades y vuelve a la cola si no terminó.
+5) Observa `Mostrar cola` durante ejecución (si pausas entre ejecuciones manualmente) y `Mostrar recursos`.
+6) Respira: mira cómo el tiempo restante cambia y procesos terminan por turnos.
+
+Laboratorio C: Prioridades y bloqueo por recursos
+1) Crea manualmente procesos que pidan el mismo recurso (p.ej. DISCO-1) y distintos tamaños de memoria.
+   - 2 -> Nombre=BackupA, prioridad=2, tiempo=6, memoria=1024, recursos=DISCO-1
+   - 2 -> Nombre=BackupB, prioridad=4, tiempo=4, memoria=1024, recursos=DISCO-1
+2) Opción 10 -> 4 (Prioridades).
+3) Opción 13: ver orden por prioridad.
+4) Opción 4: ejecutar. Uno de ellos recibirá el recurso y el otro quedará ESPERANDO.
+5) Termina el primero manualmente (opción 7) y observa que el segundo pase de ESPERANDO a LISTO (`ProcessManager.reintentarProcesosEsperando()` se llama en recarga).
+
+--- PREGUNTAS TÉCNICAS QUE RESPONDO CON EJEMPLOS ---
+1) ¿Qué sucede internamente cuando un proceso cambia de estado?
+- `Proceso.cambiarEstado(EstadoProceso)` actualiza el enum `estado`.
+- El `Logger` registra el cambio.
+- Si cambia a TERMINADO, `ProcessManager` libera recursos y lo mueve al `historial`.
+
+2) ¿Cómo se asigna memoria?
+- En `ResourceManager.solicitarRecursos()`: comprueba `memoriaUsada + memoriaSolicitada <= memoriaTotal`.
+- Si hay espacio, incrementa `memoriaUsada` y guarda `memoriaPorProceso.put(pid, memoria)`.
+- `Proceso.asignarRecursos()` actualiza `memoriaAsignada` y `recursosAsignados`.
+
+3) ¿Cómo funciona el scheduler?
+- Implementado por `Scheduler` e `AbstractScheduler`.
+- El scheduler mantiene `colaProcesos` con procesos LISTOS.
+- `obtenerSiguienteProceso()` elige usando `seleccionarSiguienteProceso()` que aplica un comparator (SJF/Prioridad) o FIFO.
+- `ejecutar()` ciclo: pedir CPU, ejecutar, reducir tiempo, liberar CPU, terminar o reinsertar en cola.
+
+4) ¿Cómo se liberan recursos?
+- `ResourceManager.liberarRecursos()` resta la memoria asignada, elimina recursos ocupados y libera la CPU si corresponde.
+- `ProcessManager.terminarProcesoInterno()` llama a `liberarRecursos()` y mueve proceso a historial.
+
+5) ¿Cómo funciona el quantum en Round Robin?
+- Quantum es el máximo de unidades que un proceso puede ejecutarse en un turno.
+- Si `tiempoRestante > quantum`, tras `quantum` unidades el proceso vuelve a LISTO y se coloca al final de la cola.
+- Si `tiempoRestante <= quantum`, termina en ese turno.
+
+6) ¿Cómo se maneja la prioridad?
+- Prioridad numérica: menor valor = mayor prioridad.
+- `PriorityScheduler` usa comparator por prioridad para seleccionar el proceso con menor valor de prioridad.
+- No hay envejecimiento implementado; procesos de baja prioridad pueden esperar indefinidamente.
+
+7) ¿Qué hace productor-consumidor?
+- Simula buffer limitado con `Semaphore` para espacios y elementos, y `mutex` como exclusión.
+- Productor espera si buffer lleno; consumidor espera si buffer vacío.
+- Es una demostración de bloqueo y sincronización.
+
+8) ¿Cómo funcionan los mensajes entre procesos?
+- `ProcessManager.enviarMensaje()` crea `MensajeProceso` y lo pone en `MessageQueue`.
+- `procesarMensajesPendientes()` entrega mensajes a procesos destino agregándolos a `mensajesRecibidos`.
+- Observa mensajes al listar procesos (3).
+
+--- CONSEJOS PARA LA PRÁCTICA ---
+- Toma notas: anota PIDs y tiempos para comparar entre algoritmos.
+- Repite experimentos cambiando quantum, número de procesos y recursos solicitados.
+- Observa logs (9) tras cada paso para entender la secuencia de eventos.
+- Si un proceso queda en ESPERANDO, usa "Mostrar recursos" para ver por qué (memoria o recurso ocupado).
+- Para reproducir interbloqueos, crea procesos que pidan recursos en orden inverso (no garantizado en esta versión, pero puedes ver conflictos de recursos).
+
+--- FIN ---
+
+Ruta del archivo: GUÍA_PRACTICA_SIMULADOR.txt
+
+Si quieres, puedo generar también una versión en Markdown con enlaces a los archivos del código fuente para que sea más didáctico.
